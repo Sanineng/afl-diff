@@ -5590,11 +5590,8 @@ static u8 fuzz_one(char** argv) {
       // if using phuzzer naming then will always pick fuzzer-1 to do http_dict havoc
       // this covers when queue is larger and fuzzer-master gets stuck in http queue combining and 
       // also to prevent it from being for every core when dictionary size is larger.
-      if (strcmp(sync_id,"fuzzer-1") == 0){
-        goto http_dictionary_havoc_stage; // formerly havoc_stage, if using phuzzer naming then set fuzzer-1 to http dict, b/c only slighl
-      } else {
-        goto havoc_stage; // formerly havoc_stage
-      }
+      goto http_queue_var_combine_stage;
+
       
     } else {
       goto http_queue_var_combine_stage;
@@ -6399,7 +6396,6 @@ skip_interest:
    * DICTIONARY STUFF *
    ********************/
 
-
   if (!extras_cnt) goto skip_user_extras;
 
   /* Overwrite with user-supplied extras. */
@@ -6578,7 +6574,7 @@ skip_extras:
   
   new_hit_cnt = queued_paths + unique_crashes;
 
-  if (skip_http_dict) goto havoc_stage;
+  // if (skip_http_dict) goto havoc_stage;
   
   aflout_extras  = fopen("/tmp/aflout-extras.log","a+");  // DEBUG TO REMOVE
   fprintf(aflout_extras, "[WC-AFL] ******* Processing HTTP Stage 1 ******** \n");
@@ -6915,7 +6911,7 @@ skip_extras:
     fprintf(aflout_extras, "[WC-AFL] ******* Processing HTTP Stage 2 for MASTER ******** \n");
   }
   
-  if (skip_http_dict) goto havoc_stage;
+  // if (skip_http_dict) goto havoc_stage;
 
   stage_name  = "http extras (ins)";
   stage_short = "ext_HT";
@@ -7104,6 +7100,9 @@ havoc_stage:
   orig_hit_cnt = queued_paths + unique_crashes;
 
   havoc_queued = queued_paths;
+
+
+  
 
   /* We essentially just do several thousand runs (depending on perf_score)
      where we take the input file and make random stacked tweaks. */
@@ -7507,22 +7506,27 @@ havoc_stage:
         stage_max  *= 2;
         perf_score *= 2;
       }
+      
+      FILE * test1 = fopen("/tmp/test.log", "a");
 
       havoc_queued = queued_paths;
 
+      fprintf(test1, "havoc queued : %lld\n", havoc_queued);
+
+      fclose(test1);
+      
     }
-
   }
 
-  new_hit_cnt = queued_paths + unique_crashes;
+//   new_hit_cnt = queued_paths + unique_crashes;
 
-  if (!splice_cycle) {
-    stage_finds[STAGE_HAVOC]  += new_hit_cnt - orig_hit_cnt;
-    stage_cycles[STAGE_HAVOC] += stage_max;
-  } else {
-    stage_finds[STAGE_SPLICE]  += new_hit_cnt - orig_hit_cnt;
-    stage_cycles[STAGE_SPLICE] += stage_max;
-  }
+//   if (!splice_cycle) {
+//     stage_finds[STAGE_HAVOC]  += new_hit_cnt - orig_hit_cnt;
+//     stage_cycles[STAGE_HAVOC] += stage_max;
+//   } else {
+//     stage_finds[STAGE_SPLICE]  += new_hit_cnt - orig_hit_cnt;
+//     stage_cycles[STAGE_SPLICE] += stage_max;
+//   }
 
 #ifndef IGNORE_FINDS
 
@@ -7610,7 +7614,7 @@ retry_splicing:
     out_buf = ck_alloc_nozero(len);
     memcpy(out_buf, in_buf, len);
 
-    goto havoc_stage;
+    goto http_queue_var_combine_stage;
 
   }
 
