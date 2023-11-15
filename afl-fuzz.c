@@ -578,6 +578,86 @@ static void bind_to_free_cpu(void) {
 /* Helper function to compare buffers; returns first and last differing offset. We
    use this to find reasonable locations for splicing two files. */
 
+struct Node {
+    char *key;
+    char *pair;
+    struct Node *next;
+};
+
+struct Node *list = NULL;
+
+// 새로운 노드를 생성하는 함수
+struct Node *createNode(char *key, char *pair) {
+    struct Node *newNode = (struct Node *)malloc(sizeof(struct Node));
+    if (newNode == NULL) {
+        fprintf(stderr, "메모리 할당 오류\n");
+        exit(EXIT_FAILURE);
+    }
+
+    newNode->key = strdup(key);    // strdup를 사용하여 문자열 복제
+    newNode->pair = strdup(pair);
+    newNode->next = NULL;
+
+    return newNode;
+}
+
+// 링크드 리스트에 노드를 추가하는 함수
+void appendNode(struct Node **head, char *key, char *pair) {
+
+    FILE * debug = fopen("/tmp/debug.log", "a+");
+
+    struct Node *current = *head;
+    while (current != NULL) {
+        if (strcmp(current->key, key) == 0) {
+            fprintf(debug, "duplicated key: %s\n", key);
+            fclose(debug);
+            return; // 중복된 key가 있으면 함수 종료
+        }
+        current = current->next;
+    }
+
+    struct Node *newNode = createNode(key, pair);
+
+    if (*head == NULL) {
+        *head = newNode;
+    } else {
+        struct Node *temp = *head;
+        while (temp->next != NULL) {
+            temp = temp->next;
+        }
+        temp->next = newNode;
+    }
+    fclose(debug);
+}
+
+// 링크드 리스트의 노드를 출력하는 함수
+void printList(struct Node *head) {
+    FILE * debug = fopen("/tmp/debug.log", "a+");
+
+    struct Node *current = head;
+    while (current != NULL) {
+        fprintf(debug, "Key: %s, Pair: %s\n", current->key, current->pair);
+        current = current->next;
+    }
+
+    fclose(debug);
+}
+
+// 메모리 해제 함수
+void freeList(struct Node *head) {
+    struct Node *current = head;
+    struct Node *next;
+
+    while (current != NULL) {
+        next = current->next;
+        free(current->key);
+        free(current->pair);
+        free(current);
+        current = next;
+    }
+}
+
+
 static void locate_diffs(u8* ptr1, u8* ptr2, u32 len, s32* first, s32* last) {
 
   s32 f_loc = -1;
@@ -5802,6 +5882,13 @@ skip_extras:
 
         } else {
 
+          u8 * key;
+          u8 * value;
+
+          sscanf(token, "%s=%s", key, value);
+
+          if(key != NULL && value != NULL) appendNode(&list, key, value);
+
           fprintf(logfile2, "\t Using %d = %s\n",i, token);
           fflush(logfile2);
           add_var_to_ll(token, i);
@@ -5868,6 +5955,9 @@ skip_extras:
         fflush(aflout_extras);
         break;
       }
+
+      printList(list);
+      freeList(list);
       
       /**
        * 
