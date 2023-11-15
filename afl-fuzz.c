@@ -5906,6 +5906,9 @@ skip_extras:
   } // end while queue_search of inputs
   fprintf(logfile2,"[WC-AFL] Number of name-value pairs added to linked list = %d for %llu bytes queue eles= %llu\n", adds_to_ll, length_added, queue_elem_cnt);
 
+  printList(list);
+  freeList(list);
+
 
     u8 keepgoing =1;
     struct var_entry *cur_var[3];
@@ -5956,8 +5959,7 @@ skip_extras:
         break;
       }
 
-      printList(list);
-      freeList(list);
+
       
       /**
        * 
