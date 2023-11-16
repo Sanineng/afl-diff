@@ -452,7 +452,7 @@ typedef struct {
         value[targetIndex] = mutateChar[rand() % 3]; \
     } while (0)
 
-void mutate(const char* vuln, char* seed, int length);
+void mutate(char* ret, const char* vuln, char* seed, int length);
 
 int findIndex(char* arr[], int n, const char* target) {
     for (int i = 0; i < n; ++i) {
@@ -528,16 +528,18 @@ void freeMap(Map* map) {
     free(map->data);
 }
 
-void mutate(const char* vuln, char* seed, int length) {
+void mutate(char* ret, const char* vuln, char* seed, int length) {
     char* get = NULL;
     char* post = NULL;
-    char buffer[1 * 1024 * 1024];
+    char buffer[100];
     int part = 0;
     int i = 0;
 
     seed += 1;
 
-        while (i < length) {
+    printf("debug 1\n");
+
+    while (i < length) {
         if (seed[i] == '\x00') {
             strncpy(buffer, seed, i);
 
@@ -567,35 +569,35 @@ void mutate(const char* vuln, char* seed, int length) {
         i++;
     }
 
-    printf("debug point 4 \n");
+    printf("debug 2\n");
 
     char* getArray[10];
     int getCount = 0;
+    char* getKey[10];
+    char* getValue[10];
+
     char* postArray[10];
     int postCount = 0;
+    char* postKey[10];
+    char* postValue[10];
 
-  printf("debug get : %s\n", get);
-
+// Parsing by &
     if (get) {
+        printf("Get : %s\n", get);
         char* getToken = strtok(get, "&");
         i = 0;
 
-        printf("debug point 4-1 \n");
-
-        while (getToken != NULL) {
+        while (getToken != NULL && i < 10) {
             getArray[i] = getToken;
             i++;
             getCount++;
 
             getToken = strtok(NULL, "&");
         }
-
-        printf("debug point 4-2 \n");
     }
 
-    
-
     if (post) {
+        printf("Post : %s\n", post);
         char* postToken = strtok(post, "&");
         i = 0;
 
@@ -608,43 +610,64 @@ void mutate(const char* vuln, char* seed, int length) {
         }
     }
 
+    printf("debug 3\n");
 
+// Parsing by =
+    for (int i = 0; i < getCount; i++) {
+        if (getArray[i]) {
+            getKey[i] = strtok(getArray[i], "=");
+            getValue[i] = strtok(NULL, "=");
+        }
+    }
 
-    printf("debug point 5 \n");
+    for (int i = 0; i < postCount; i++) {
+        if (postArray[i]) {
+            postKey[i] = strtok(postArray[i], "=");
+            postValue[i] = strtok(NULL, "=");
+        }
+    }
 
+    printf("debug 4\n");
 
-
+// Select vuln class
     switch (findIndex(vulns, 5, vuln)) {
         case 0:
-            //printf("vuln is %s\n", vuln);
+            printf("vuln is %s\n", vuln);
 
             if (getCount) {
                 for (int i = 0; i < getCount; i++)
-                    MUTATE_SQLI(getArray[i]);
+                    MUTATE_SQLI(getValue[i]);
             }
             if (postCount) {
                 for (int i = 0; i < postCount; i++)
-                    MUTATE_SQLI(postArray[i]);
+                    MUTATE_SQLI(postValue[i]);
             }
 
             break;
         case 1:
-            //printf("vuln is %s\n", vuln);
+            printf("vuln is %s\n", vuln);
             break;
         case 2:
-            //printf("vuln is %s\n", vuln);
+            printf("vuln is %s\n", vuln);
             break;
         case 3:
-            //printf("vuln is %s\n", vuln);
+            printf("vuln is %s\n", vuln);
             break;
         case 4:
-            //printf("vuln is %s\n", vuln);
+            printf("vuln is %s\n", vuln);
             break;
         default:
             printf("%s is not in vulns\n", vuln);
     }
 
+    printf("debug 5\n");
+
+// Concat by =, &
     if (get) {
+        for (int i = 0; i < getCount; i++) {
+            getKey[i][strlen(getKey[i])] = '=';
+        }
+
         get = getArray[0];
 
         for (int i = 1; i < getCount; i++) {
@@ -654,23 +677,54 @@ void mutate(const char* vuln, char* seed, int length) {
 
 
     if (post) {
+        for (int i = 0; i < postCount; i++) {
+            postKey[i][strlen(postKey[i])] = '=';
+        }
+
         post = postArray[0];
-    
-        if (1 < postCount) {
-            for (int i = 1; i < postCount; i++) {
-                post[strlen(post)] = '&';
-            }
+
+        for (int i = 1; i < postCount; i++) {
+            post[strlen(post)] = '&';
         }
     }
 
-    printf("debug point 6 \n");
+    printf("debug 6\n");
 
+    if (strcmp(get, "") && strcmp(post, "")) {
+        ret[0] = '\x00';
+        ret[1] = '\x00';
+        strcat(ret + 2, get);
+        ret[2 + strlen(get)] = '\x00';
+        strcat(ret + 2 + strlen(get), post);
+        ret[2 + strlen(get) + 1 + strlen(post)] = '\x00';
+    } else if (strcmp(get, "") && !strcmp(post, "")) {
+        ret[0] = '\x00';
+        ret[1] = '\x00';
+        strcat(ret + 2, get);
+        ret[2 + strlen(get)] = '\x00';
+        ret[2 + strlen(get) + 1] = '\x00';
+    } else if (!strcmp(get, "") && strcmp(post, "")) {
+        ret[0] = '\x00';
+        ret[1] = '\x00';
+        ret[3] = '\x00';
+        strcat(ret + 2 + strlen(get), post);
+        ret[2 + strlen(get) + 1 + strlen(post)] = '\x00';
+    } else {
+        ret[0] = '\x00';
+        ret[1] = '\x00';
+        ret[3] = '\x00';
+        ret[4] = '\x00';
+    }
 
-    //printf("cookie : %s\nget : %s\npost : %s\n", cookie, get, post);
+    if (strcmp(get, ""))
+        printf("get : %s\n", get);
+        free(get);
 
-    free(get);
-    free(post);
+    if (strcmp(post, ""))
+        printf("post : %s\n", post);
+        free(post);
 }
+
 
 
 /* Shuffle an array of pointers. Might be slightly biased. */
@@ -1879,6 +1933,11 @@ static void read_testcases(void) {
 
     struct stat st;
 
+    FILE * debug = fopen("/tmp/debug.log", "a+");
+    fprintf(debug, "testcase : %s\n", nl[i] -> d_name);
+    fclose(debug);
+
+
     u8* fn = alloc_printf("%s/%s", in_dir, nl[i]->d_name);
     u8* dfn = alloc_printf("%s/.state/deterministic_done/%s", in_dir, nl[i]->d_name);
 
@@ -1910,10 +1969,6 @@ static void read_testcases(void) {
 
     if (!access(dfn, F_OK)) passed_det = 1;
     ck_free(dfn);
-
-    FILE * debug = fopen("/tmp/debug.log", "a+");
-    fprintf(debug, "testcase : %s\n", fn);
-    fclose(debug);
 
     add_to_queue(fn, st.st_size, passed_det);
 
@@ -5664,8 +5719,6 @@ static u8 fuzz_one(char** argv) {
   /* WTFUZZ init */
   Map vulnsMap;
   size_t mapSize = 5;
-  initializeMap(&vulnsMap, mapSize);
-
 
   s32 len, fd, temp_len, i, j;
   u8  *in_buf, *out_buf, *orig_in, *ex_tmp, *eff_map = 0;
@@ -5878,7 +5931,7 @@ skip_interest:
 
   stage_val_type = STAGE_VAL_NONE;
 
-  orig_hit_cnt = new_hit_cnt;
+  orig_hit_cnt = queued_paths + unique_crashes;
 
   struct queue_entry * queue_search;
 
@@ -5889,48 +5942,63 @@ skip_interest:
   char line[100];
   char vuln[20];
   int count;
+  char * tweaked;
+  initializeMap(&vulnsMap, mapSize);
+
 
   while (fgets(line, sizeof(line), fp) != NULL) {
-      printf("%s", line);
-      sscanf(line, "%s : %d", vuln, &count);
+    printf("%s", line);
+    sscanf(line, "%s : %d", vuln, &count);
 
-      addToMap(&vulnsMap, vuln, count);
+    addToMap(&vulnsMap, vuln, count);
 
-      printf("key : %s, value : %d\n------------\n", vuln, getFromMap(&vulnsMap, vuln));
-      i++;
+    printf("key : %s, value : %d\n------------\n", vuln, getFromMap(&vulnsMap, vuln));
+    i++;
   }
   const char* svuln = randomSelection(vulnsMap);
 
   char buffer[1 * 1024 * 1024];
+  char mutatedSeed[100];
 
   while(queue_search != NULL){
     FILE* qfn = fopen(queue_search->fname,"rb");
+
     if (qfn == NULL){
       queue_search = queue_search->next;
       continue;
     }
 
-    printf("debug point 1 \n");
+
 
     int buf_size = fread(buffer, 1, (1 * 1024 * 1024), qfn);
 
-    printf("debug point 2 \n");
-
     fclose(qfn);
-    mutate(svuln, buffer, buf_size);
+    mutate(mutatedSeed, svuln, buffer, buf_size);
 
-    printf("debug point 3 \n");
+    printf("debug test-1 \n");
+
+    if (common_fuzz_stuff(argv, mutatedSeed, buf_size)) {
+      goto abandon_entry;
+    }
+
+    printf("debug test-2 \n");
+
+    int current_hit_cnt = queued_paths + unique_crashes;
+
+    if(current_hit_cnt != orig_hit_cnt){
+      printf("Mutator found new path\n");
+    }
+
     queue_search = queue_search->next;
   }
 
   fclose(fp);
+  freeMap(&vulnsMap);
 
   new_hit_cnt = queued_paths + unique_crashes;
 
   stage_finds[STAGE_EXTRAS_UO]  += new_hit_cnt - orig_hit_cnt;
   stage_cycles[STAGE_EXTRAS_UO] += stage_max;
-
-  
 
 
 goto skip_interest;
