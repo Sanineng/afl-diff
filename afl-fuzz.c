@@ -716,6 +716,8 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
         ret[4] = '\x00';
     }
 
+    printf("debug 7\n");
+
     if (strcmp(get, ""))
         printf("get : %s\n", get);
         free(get);
@@ -723,6 +725,8 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
     if (strcmp(post, ""))
         printf("post : %s\n", post);
         free(post);
+
+    printf("debug 8\n");
 }
 
 
@@ -5834,27 +5838,27 @@ static u8 fuzz_one(char** argv) {
    * TRIMMING *
    ************/
 
-  if (!dumb_mode && !queue_cur->trim_done) {
+  // if (!dumb_mode && !queue_cur->trim_done) {
 
-    u8 res = trim_case(argv, queue_cur, in_buf);
+  //   u8 res = trim_case(argv, queue_cur, in_buf);
 
-    if (res == FAULT_ERROR)
-      FATAL("Unable to execute target application");
+  //   if (res == FAULT_ERROR)
+  //     FATAL("Unable to execute target application");
 
-    if (stop_soon) {
-      cur_skipped_paths++;
-      goto abandon_entry;
-    }
+  //   if (stop_soon) {
+  //     cur_skipped_paths++;
+  //     goto abandon_entry;
+  //   }
 
-    /* Don't retry trimming, even if it failed. */
+  //   /* Don't retry trimming, even if it failed. */
 
-    queue_cur->trim_done = 1;
+  //   queue_cur->trim_done = 1;
 
-    if (len != queue_cur->len) len = queue_cur->len;
+  //   if (len != queue_cur->len) len = queue_cur->len;
 
-  }
+  // }
 
-  memcpy(out_buf, in_buf, len);
+  // memcpy(out_buf, in_buf, len);
 
   /*********************
    * PERFORMANCE SCORE *
@@ -5943,8 +5947,8 @@ skip_interest:
   char vuln[20];
   int count;
   char * tweaked;
+  
   initializeMap(&vulnsMap, mapSize);
-
 
   while (fgets(line, sizeof(line), fp) != NULL) {
     printf("%s", line);
@@ -5961,6 +5965,9 @@ skip_interest:
   char mutatedSeed[100];
 
   while(queue_search != NULL){
+
+    
+
     FILE* qfn = fopen(queue_search->fname,"rb");
 
     if (qfn == NULL){
@@ -5990,16 +5997,16 @@ skip_interest:
     }
 
     queue_search = queue_search->next;
+    
   }
 
-  fclose(fp);
   freeMap(&vulnsMap);
+  fclose(fp);
 
   new_hit_cnt = queued_paths + unique_crashes;
 
   stage_finds[STAGE_EXTRAS_UO]  += new_hit_cnt - orig_hit_cnt;
   stage_cycles[STAGE_EXTRAS_UO] += stage_max;
-
 
 goto skip_interest;
 
