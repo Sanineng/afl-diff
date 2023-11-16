@@ -583,7 +583,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
 // Parsing by &
     if (get) {
-        printf("Get : %s\n", get);
         char* getToken = strtok(get, "&");
         i = 0;
 
@@ -597,7 +596,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
     }
 
     if (post) {
-        printf("Post : %s\n", post);
         char* postToken = strtok(post, "&");
         i = 0;
 
@@ -664,6 +662,7 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
 // Concat by =, &
     if (get) {
+      printf("get : %s\n", get);
         for (int i = 0; i < getCount; i++) {
             getKey[i][strlen(getKey[i])] = '=';
         }
@@ -677,6 +676,7 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
 
     if (post) {
+        printf("post : %s\n", post);
         for (int i = 0; i < postCount; i++) {
             postKey[i][strlen(postKey[i])] = '=';
         }
@@ -692,39 +692,43 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
     if (strcmp(get, "") && strcmp(post, "")) {
         ret[0] = '\x00';
-        ret[1] = '\x00';
-        strcat(ret + 2, get);
-        ret[2 + strlen(get)] = '\x00';
+        strcat(ret + 1, get);
+        ret[1 + strlen(get)] = '\x00';
         strcat(ret + 2 + strlen(get), post);
-        ret[2 + strlen(get) + 1 + strlen(post)] = '\x00';
+        ret[2 + strlen(get) +  strlen(post)] = '\x00';
     } else if (strcmp(get, "") && !strcmp(post, "")) {
         ret[0] = '\x00';
-        ret[1] = '\x00';
-        strcat(ret + 2, get);
-        ret[2 + strlen(get)] = '\x00';
-        ret[2 + strlen(get) + 1] = '\x00';
+        strcat(ret + 1, get);
+        ret[1 + strlen(get)] = '\x00';
+        ret[1 + strlen(get) + 1] = '\x00';
     } else if (!strcmp(get, "") && strcmp(post, "")) {
         ret[0] = '\x00';
         ret[1] = '\x00';
-        ret[3] = '\x00';
-        strcat(ret + 2 + strlen(get), post);
-        ret[2 + strlen(get) + 1 + strlen(post)] = '\x00';
+        strcat(ret + 2 , post);
+        ret[2 + strlen(post)] = '\x00';
     } else {
         ret[0] = '\x00';
         ret[1] = '\x00';
-        ret[3] = '\x00';
-        ret[4] = '\x00';
+        ret[2] = '\x00';
     }
+
+    FILE * debug = fopen("/home/wc/witcher/debug/debug.log", "a+");
+    fprintf(debug, "DEBUG : %s\n", ret+1);
+    fclose(debug);
+
 
     printf("debug 7\n");
 
-    if (strcmp(get, ""))
+    if (strcmp(get, "")) {
         printf("get : %s\n", get);
         free(get);
+    }
 
-    if (strcmp(post, ""))
+    if (strcmp(post, "")){
         printf("post : %s\n", post);
         free(post);
+
+    } 
 
     printf("debug 8\n");
 }
@@ -5962,10 +5966,11 @@ skip_interest:
   const char* svuln = randomSelection(vulnsMap);
 
   char buffer[1 * 1024 * 1024];
-  char mutatedSeed[100];
+  char * mutatedSeed;
+  
 
   while(queue_search != NULL){
-
+    mutatedSeed = ck_alloc(1*1024*1024);
     
 
     FILE* qfn = fopen(queue_search->fname,"rb");
@@ -5974,8 +5979,6 @@ skip_interest:
       queue_search = queue_search->next;
       continue;
     }
-
-
 
     int buf_size = fread(buffer, 1, (1 * 1024 * 1024), qfn);
 
@@ -5997,7 +6000,8 @@ skip_interest:
     }
 
     queue_search = queue_search->next;
-    
+
+    ck_free(mutatedSeed);
   }
 
   freeMap(&vulnsMap);
