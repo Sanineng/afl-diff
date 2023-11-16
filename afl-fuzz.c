@@ -475,8 +475,6 @@ const char* randomSelection(Map map) {
     int randomValue = rand() % totalValue;
     int cumulativeValue = 0;
 
-    printf("%d\n", randomValue);
-
     for (int i = 0; i < map.size; ++i) {
         cumulativeValue += map.data[i]->value;
     
@@ -537,8 +535,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
     seed += 1;
 
-    printf("debug 1\n");
-
     while (i < length) {
         if (seed[i] == '\x00') {
             strncpy(buffer, seed, i);
@@ -569,7 +565,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
         i++;
     }
 
-    printf("debug 2\n");
 
     char* getArray[10];
     int getCount = 0;
@@ -608,8 +603,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
         }
     }
 
-    printf("debug 3\n");
-
 // Parsing by =
     for (int i = 0; i < getCount; i++) {
         if (getArray[i]) {
@@ -625,12 +618,9 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
         }
     }
 
-    printf("debug 4\n");
-
 // Select vuln class
     switch (findIndex(vulns, 5, vuln)) {
         case 0:
-            printf("vuln is %s\n", vuln);
 
             if (getCount) {
                 for (int i = 0; i < getCount; i++)
@@ -643,26 +633,20 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
             break;
         case 1:
-            printf("vuln is %s\n", vuln);
             break;
         case 2:
-            printf("vuln is %s\n", vuln);
             break;
         case 3:
-            printf("vuln is %s\n", vuln);
             break;
         case 4:
-            printf("vuln is %s\n", vuln);
             break;
         default:
             printf("%s is not in vulns\n", vuln);
     }
 
-    printf("debug 5\n");
 
 // Concat by =, &
     if (get) {
-      printf("get : %s\n", get);
         for (int i = 0; i < getCount; i++) {
             getKey[i][strlen(getKey[i])] = '=';
         }
@@ -676,7 +660,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
 
 
     if (post) {
-        printf("post : %s\n", post);
         for (int i = 0; i < postCount; i++) {
             postKey[i][strlen(postKey[i])] = '=';
         }
@@ -687,8 +670,6 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
             post[strlen(post)] = '&';
         }
     }
-
-    printf("debug 6\n");
 
     if (strcmp(get, "") && strcmp(post, "")) {
         ret[0] = '\x00';
@@ -717,20 +698,15 @@ void mutate(char* ret, const char* vuln, char* seed, int length) {
     fclose(debug);
 
 
-    printf("debug 7\n");
 
     if (strcmp(get, "")) {
-        printf("get : %s\n", get);
         free(get);
     }
 
     if (strcmp(post, "")){
-        printf("post : %s\n", post);
-        free(post);
-
+        free(post)
     } 
 
-    printf("debug 8\n");
 }
 
 
@@ -5960,7 +5936,7 @@ skip_interest:
 
     addToMap(&vulnsMap, vuln, count);
 
-    printf("key : %s, value : %d\n------------\n", vuln, getFromMap(&vulnsMap, vuln));
+    // printf("key : %s, value : %d\n------------\n", vuln, getFromMap(&vulnsMap, vuln));
     i++;
   }
   const char* svuln = randomSelection(vulnsMap);
@@ -5985,13 +5961,9 @@ skip_interest:
     fclose(qfn);
     mutate(mutatedSeed, svuln, buffer, buf_size);
 
-    printf("debug test-1 \n");
-
     if (common_fuzz_stuff(argv, mutatedSeed, buf_size)) {
       goto abandon_entry;
     }
-
-    printf("debug test-2 \n");
 
     int current_hit_cnt = queued_paths + unique_crashes;
 
